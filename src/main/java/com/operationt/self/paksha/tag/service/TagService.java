@@ -2,6 +2,7 @@ package com.operationt.self.paksha.tag.service;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.operationt.self.paksha.common.PaginationUtils;
 import com.operationt.self.paksha.tag.dto.TagResponse;
 import com.operationt.self.paksha.tag.dto.TagUpsertRequest;
 import com.operationt.self.paksha.tag.entity.TagEntity;
@@ -9,6 +10,8 @@ import com.operationt.self.paksha.tag.entity.TagKind;
 import com.operationt.self.paksha.tag.entity.TagValueType;
 import com.operationt.self.paksha.tag.repo.TagRepository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,8 +43,9 @@ public class TagService {
                 .map(this::toResponse).toList();
     }
 
-    public List<TagResponse> get(UUID owner) {
-        return tagRepo.findAll().stream().map(this::toResponse).toList();
+    public List<TagResponse> get(UUID owner, Integer limit, Integer offset) {
+        Pageable pageable = PaginationUtils.buildPageable(limit, offset, Sort.by("createdAt").descending());
+        return tagRepo.findByOwnerUserId(owner, pageable).stream().map(this::toResponse).toList();
     }
 
     @Transactional

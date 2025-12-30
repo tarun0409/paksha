@@ -27,8 +27,12 @@ public class WidgetController {
     }
 
     @GetMapping("/api/dashboards/{dashboardId}/widgets")
-    public List<WidgetResponse> list(@PathVariable UUID dashboardId) {
-        return widgetService.list(owner(), dashboardId);
+    public List<WidgetResponse> list(
+            @PathVariable UUID dashboardId,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset
+    ) {
+        return widgetService.list(owner(), dashboardId, limit, offset);
     }
 
     @PostMapping("/api/widgets/{widgetId}/render")

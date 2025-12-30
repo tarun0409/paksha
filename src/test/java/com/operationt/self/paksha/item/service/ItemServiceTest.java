@@ -185,5 +185,18 @@ class ItemServiceTest {
         List<UUID> result = searchRepo.searchItemsIds(searchTestData.owner(), req);
         assertThat(result).containsExactly(searchTestData.getItems().getFirst());
     }
-}
 
+    @Test
+    void appliesLimitAndOffset() {
+        var req = new ItemSearchRequest(
+                List.of("finished"),
+                List.of(),
+                1,
+                1
+        );
+
+        List<UUID> result = searchRepo.searchItemsIds(searchTestData.owner(), req);
+
+        assertThat(result).containsExactly(searchTestData.getItems().getFirst());
+    }
+}

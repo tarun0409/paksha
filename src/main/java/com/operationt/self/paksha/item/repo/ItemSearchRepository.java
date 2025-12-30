@@ -1,6 +1,7 @@
 package com.operationt.self.paksha.item.repo;
 
 import com.operationt.self.paksha.item.dto.ItemSearchRequest;
+import com.operationt.self.paksha.common.PaginationUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import org.springframework.stereotype.Repository;
@@ -22,6 +23,8 @@ public class ItemSearchRepository {
     public List<UUID> searchItemsIds(UUID ownerUserId, ItemSearchRequest req) {
         List<String> singleKeys = normalizeKeys(req.singleTags());
         List<ItemSearchRequest.FunctionalFilter> funcs = req.functional() == null ? List.of() : req.functional();
+        int limit = PaginationUtils.sanitizeLimit(req.limit());
+        int offset = PaginationUtils.sanitizeOffset(req.offset());
 
         StringBuilder sql = new StringBuilder();
         Map<String, Object> params = new HashMap<>();
@@ -128,6 +131,8 @@ public class ItemSearchRepository {
 
         Query q = em.createNativeQuery(sql.toString());
         params.forEach(q::setParameter);
+        q.setFirstResult(offset);
+        q.setMaxResults(limit);
 
         @SuppressWarnings("unchecked")
         List<Object> rows = q.getResultList();

@@ -29,8 +29,11 @@ public class DashboardController {
     }
 
     @GetMapping
-    public List<DashboardResponse> list() {
-        return dashboardService.list(owner());
+    public List<DashboardResponse> list(
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset
+    ) {
+        return dashboardService.list(owner(), limit, offset);
     }
 
     @PostMapping("/{dashboardId}/render")

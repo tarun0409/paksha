@@ -10,6 +10,9 @@ import com.operationt.self.paksha.item.repo.ItemSearchRepository;
 import com.operationt.self.paksha.item.repo.ItemTagRepository;
 import com.operationt.self.paksha.tag.dto.TagResponse;
 import com.operationt.self.paksha.tag.service.TagService;
+import com.operationt.self.paksha.common.PaginationUtils;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,8 +62,9 @@ public class ItemService {
 
 
 
-    public List<ItemResponse> get(UUID ownerUserId) {
-        List<ItemEntity> entities = itemRepo.findAll();
+    public List<ItemResponse> get(UUID ownerUserId, Integer limit, Integer offset) {
+        Pageable pageable = PaginationUtils.buildPageable(limit, offset, Sort.by("updatedAt").descending());
+        List<ItemEntity> entities = itemRepo.findByOwnerUserId(ownerUserId, pageable).getContent();
         return getItemResponses(entities, ownerUserId);
     }
 
