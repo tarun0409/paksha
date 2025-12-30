@@ -10,7 +10,7 @@ public record ItemResponse(
         UUID id,
         String title,
         String body,
-        List<TagResponse> tagIds,
+        List<TagResponse> tags,
         Instant createdAt,
         Instant updatedAt
 ) {}
