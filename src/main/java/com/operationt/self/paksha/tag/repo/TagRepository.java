@@ -2,6 +2,8 @@ package com.operationt.self.paksha.tag.repo;
 import com.operationt.self.paksha.tag.entity.TagEntity;
 import com.operationt.self.paksha.tag.entity.TagKind;
 import com.operationt.self.paksha.tag.entity.TagValueType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -20,7 +22,7 @@ public interface TagRepository extends JpaRepository<TagEntity, UUID> {
             String valueCanonical
     );
     List<TagEntity> findAllByIdInAndOwnerUserId(List<UUID> ids, UUID ownerUserId);
+    Page<TagEntity> findByOwnerUserId(UUID ownerUserId, Pageable pageable);
 
 }
-
 

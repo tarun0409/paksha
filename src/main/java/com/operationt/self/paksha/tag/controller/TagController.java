@@ -7,12 +7,8 @@ import com.operationt.self.paksha.tag.service.TagService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
-
-
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/tags")
@@ -49,9 +45,11 @@ public class TagController {
     public List<TagResponse> list(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) TagKind kind,
-            @RequestParam(required = false) UUID key
+            @RequestParam(required = false) UUID key,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset
     ) {
-        return tagService.get(owner());
+        return tagService.get(owner(), limit, offset);
     }
 
     /** Get tag by id */

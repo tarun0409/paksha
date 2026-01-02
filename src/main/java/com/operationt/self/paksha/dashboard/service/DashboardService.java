@@ -6,6 +6,9 @@ import com.operationt.self.paksha.dashboard.dto.RenderDashboardResponse;
 import com.operationt.self.paksha.dashboard.entity.DashboardEntity;
 import com.operationt.self.paksha.dashboard.repo.DashboardRepository;
 import com.operationt.self.paksha.dashboard.repo.WidgetRepository;
+import com.operationt.self.paksha.common.PaginationUtils;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,8 +43,9 @@ public class DashboardService {
     }
 
     @Transactional(readOnly = true)
-    public List<DashboardResponse> list(UUID ownerUserId) {
-        return dashboardRepo.findByOwnerUserId(ownerUserId)
+    public List<DashboardResponse> list(UUID ownerUserId, Integer limit, Integer offset) {
+        Pageable pageable = PaginationUtils.buildPageable(limit, offset, Sort.by("updatedAt").descending());
+        return dashboardRepo.findByOwnerUserId(ownerUserId, pageable)
                 .stream()
                 .map(d -> new DashboardResponse(d.getId(), d.getName(), d.getDescription()))
                 .toList();

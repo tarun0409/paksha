@@ -30,8 +30,11 @@ public class ItemController {
     }
 
     @GetMapping
-    public List<ItemResponse> get() {
-        return itemService.get(owner());
+    public List<ItemResponse> get(
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset
+    ) {
+        return itemService.get(owner(), limit, offset);
     }
 
     @GetMapping("/search")
