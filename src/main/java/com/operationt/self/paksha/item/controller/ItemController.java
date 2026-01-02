@@ -41,5 +41,10 @@ public class ItemController {
     public List<ItemResponse> search(@Valid @RequestBody ItemSearchRequest req) {
         return itemService.search(req, owner());
     }
+
+    @DeleteMapping("/{itemId}/tag/{tagId}")
+    public ItemResponse unassociateTag(@PathVariable UUID itemId, @PathVariable UUID tagId) {
+        return itemService.unassociateTag(owner(), itemId, tagId);
+    }
 }
 

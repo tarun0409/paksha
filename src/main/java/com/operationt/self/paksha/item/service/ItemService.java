@@ -80,14 +80,12 @@ public class ItemService {
     public ItemResponse create(UUID ownerUserId, ItemCreateRequest req) {
         var now = Instant.now();
 
-        // 1) Validate all tagIds exist and belong to user
         List<UUID> tagIds = req.tagIds() == null ? List.of() : req.tagIds();
         var tags = tagService.getByIds(ownerUserId, tagIds);
         if (tags.size() != new HashSet<>(tagIds).size()) {
             throw new IllegalArgumentException("Some tagIds are invalid or do not belong to the user.");
         }
 
-        // 2) Create item
         ItemEntity item = new ItemEntity();
         item.setId(UUID.randomUUID());
         item.setOwnerUserId(ownerUserId);
@@ -105,6 +103,15 @@ public class ItemService {
         }
 
         return new ItemResponse(item.getId(), item.getTitle(), item.getBody(), tags, item.getCreatedAt(), item.getUpdatedAt());
+    }
+
+    @Transactional
+    public ItemResponse unassociateTag(UUID ownerId, UUID itemId, UUID tagId) {
+        ItemTagEntity linkItem = new ItemTagEntity();
+        linkItem.setItemId(itemId);
+        linkItem.setTagId(tagId);
+        linkRepo.delete(linkItem);
+        return getByItemIds(List.of(itemId), ownerId).getFirst();
     }
 }
 

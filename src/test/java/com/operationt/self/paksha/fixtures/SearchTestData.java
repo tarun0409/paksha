@@ -40,6 +40,11 @@ public final class SearchTestData {
     public UUID owner() {
         return owner;
     }
+    private final List<UUID> tagsToUnassociate = new ArrayList<>();
+
+    public List<UUID> getTagsToUnassociate() {
+        return tagsToUnassociate;
+    }
 
     public List<UUID> getItems() {
         return created.itemIds();
@@ -50,27 +55,32 @@ public final class SearchTestData {
 
         created.itemIds().forEach(itemRepo::deleteById);
         created.tagIds().forEach(tagRepo::deleteById);
+        tagsToUnassociate.clear();
     }
 
     public void seedBasicScenario() {
         // Tags
-        TagEntity personal = singleTag(owner, tagRepo, "personal");
-        TagEntity finished = singleTag(owner, tagRepo, "finished");
-        TagEntity learning = singleTag(owner, tagRepo, "learning");
+        TagEntity personal = singleTag(owner, tagRepo, "personal_test");
+        TagEntity finished = singleTag(owner, tagRepo, "finished_test");
+        TagEntity learning = singleTag(owner, tagRepo, "learning_test");
 
-        TagEntity points5 = functionalNumber(owner, tagRepo, "points", new BigDecimal("5"));
-        TagEntity points3 = functionalNumber(owner, tagRepo, "points", new BigDecimal("3"));
-        TagEntity monthDec = functionalString(owner, tagRepo, "month", "december");
-        TagEntity archivedTrue = functionalBool(owner, tagRepo, "archived", true);
-        TagEntity archivedFalse = functionalBool(owner, tagRepo, "archived", false);
-        TagEntity urgency = functionalString(owner, tagRepo, "urgency", "casual");
-        TagEntity day2025_12_01 = functionalDate(owner, tagRepo, "created_day", LocalDate.parse("2025-12-01"));
-        TagEntity day2025_11_01 = functionalDate(owner, tagRepo, "created_day", LocalDate.parse("2025-11-01"));
+        TagEntity unassociateOne = singleTag(owner, tagRepo, "tagToUnassociate_1");
+        TagEntity unassociateTwo = singleTag(owner, tagRepo, "tagToUnassociate_2");
+
+        TagEntity points5 = functionalNumber(owner, tagRepo, "points_test", new BigDecimal("5"));
+        TagEntity points3 = functionalNumber(owner, tagRepo, "points_test", new BigDecimal("3"));
+        TagEntity monthDec = functionalString(owner, tagRepo, "month_test", "december");
+        TagEntity archivedTrue = functionalBool(owner, tagRepo, "archived_test", true);
+        TagEntity archivedFalse = functionalBool(owner, tagRepo, "archived_test", false);
+        TagEntity urgency = functionalString(owner, tagRepo, "urgency_test", "casual");
+        TagEntity day2025_12_01 = functionalDate(owner, tagRepo, "created_day_test", LocalDate.parse("2025-12-01"));
+        TagEntity day2025_11_01 = functionalDate(owner, tagRepo, "created_day_test", LocalDate.parse("2025-11-01"));
 
         // Items
-        ItemEntity a = item(owner, itemRepo, "A", 10);
-        ItemEntity b = item(owner, itemRepo, "B", 20);
-        ItemEntity c = item(owner, itemRepo, "C", 30);
+        ItemEntity a = item(owner, itemRepo, "testA", 10);
+        ItemEntity b = item(owner, itemRepo, "testB", 20);
+        ItemEntity c = item(owner, itemRepo, "testC", 30);
+        ItemEntity thelPathriSingh = item(owner, itemRepo, "thelPathriSingh", 40);
 
         // Links
         link(linkRepo, a, personal);
@@ -91,13 +101,30 @@ public final class SearchTestData {
         link(linkRepo, c, personal);
         link(linkRepo, c, finished);
         link(linkRepo, c, learning);
+
+        link(linkRepo, thelPathriSingh, unassociateOne);
+        link(linkRepo, thelPathriSingh, unassociateTwo);
         // c missing monthDec
 
         this.created = new Created(
                 owner,
-                List.of(a.getId(), b.getId(), c.getId()),
-                List.of(personal.getId(), finished.getId(), learning.getId(), points5.getId(), points3.getId(), monthDec.getId(), archivedTrue.getId(), archivedFalse.getId(), day2025_12_01.getId(), day2025_11_01.getId(), urgency.getId())
+                List.of(a.getId(), b.getId(), c.getId(), thelPathriSingh.getId()),
+                List.of(personal.getId(),
+                        finished.getId(),
+                        learning.getId(),
+                        points5.getId(),
+                        points3.getId(),
+                        monthDec.getId(),
+                        archivedTrue.getId(),
+                        archivedFalse.getId(),
+                        day2025_12_01.getId(),
+                        day2025_11_01.getId(),
+                        urgency.getId(),
+                        unassociateOne.getId(),
+                        unassociateTwo.getId())
         );
+        tagsToUnassociate.add(unassociateOne.getId());
+        tagsToUnassociate.add(unassociateTwo.getId());
     }
 
     // ---------- creators ----------

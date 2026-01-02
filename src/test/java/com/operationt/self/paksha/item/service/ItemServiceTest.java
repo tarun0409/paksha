@@ -1,6 +1,7 @@
 package com.operationt.self.paksha.item.service;
 
 import com.operationt.self.paksha.fixtures.SearchTestData;
+import com.operationt.self.paksha.item.dto.ItemResponse;
 import com.operationt.self.paksha.item.dto.ItemSearchRequest;
 import com.operationt.self.paksha.item.repo.ItemSearchRepository;
 import org.junit.jupiter.api.*;
@@ -10,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import java.util.List;
 import java.util.UUID;
+import static org.junit.Assert.assertEquals;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,6 +22,9 @@ class ItemServiceTest {
 
     @Autowired
     ItemSearchRepository searchRepo;
+
+    @Autowired
+    ItemService itemService;
 
     @Autowired
     SearchTestData searchTestData;
@@ -39,7 +44,7 @@ class ItemServiceTest {
     @Test
     void oneSingleTagSearch() {
         var req = new ItemSearchRequest(
-                List.of("finished"),
+                List.of("finished_test"),
                 List.of(),
                 null,
                 null
@@ -61,7 +66,7 @@ class ItemServiceTest {
     void oneFunctionalTagSearch_pointsGte() {
         var req = new ItemSearchRequest(
                 List.of(),
-                List.of(new ItemSearchRequest.FunctionalFilter("points", ItemSearchRequest.Op.GTE, ItemSearchRequest.ValueType.NUMBER, 5)),
+                List.of(new ItemSearchRequest.FunctionalFilter("points_test", ItemSearchRequest.Op.GTE, ItemSearchRequest.ValueType.NUMBER, 5)),
                 null,
                 null
         );
@@ -78,7 +83,7 @@ class ItemServiceTest {
     @Test
     void multipleSingleTagSearch_allMustMatch() {
 
-        var req = new ItemSearchRequest(List.of("personal", "finished"), List.of(), null, null);
+        var req = new ItemSearchRequest(List.of("personal_test", "finished_test"), List.of(), null, null);
 
         List<UUID> result = searchRepo.searchItemsIds(searchTestData.owner(), req);
 
@@ -92,8 +97,8 @@ class ItemServiceTest {
         var req = new ItemSearchRequest(
                 List.of(),
                 List.of(
-                        new ItemSearchRequest.FunctionalFilter("points", ItemSearchRequest.Op.GTE, ItemSearchRequest.ValueType.NUMBER, 5),
-                        new ItemSearchRequest.FunctionalFilter("month", ItemSearchRequest.Op.EQ, ItemSearchRequest.ValueType.STRING, "december")
+                        new ItemSearchRequest.FunctionalFilter("points_test", ItemSearchRequest.Op.GTE, ItemSearchRequest.ValueType.NUMBER, 5),
+                        new ItemSearchRequest.FunctionalFilter("month_test", ItemSearchRequest.Op.EQ, ItemSearchRequest.ValueType.STRING, "december")
                 ),
                 null, null
         );
@@ -107,8 +112,8 @@ class ItemServiceTest {
     void oneSingleAndOneFunctionalTagSearch() {
 
         var req = new ItemSearchRequest(
-                List.of("finished"),
-                List.of(new ItemSearchRequest.FunctionalFilter("points", ItemSearchRequest.Op.EQ, ItemSearchRequest.ValueType.NUMBER, 5)),
+                List.of("finished_test"),
+                List.of(new ItemSearchRequest.FunctionalFilter("points_test", ItemSearchRequest.Op.EQ, ItemSearchRequest.ValueType.NUMBER, 5)),
                 null, null
         );
 
@@ -120,11 +125,11 @@ class ItemServiceTest {
     @Test
     void multipleSingleAndMultipleFunctionalTagSearch() {
         var req = new ItemSearchRequest(
-                List.of("personal", "finished"),
+                List.of("personal_test", "finished_test"),
                 List.of(
-                        new ItemSearchRequest.FunctionalFilter("points", ItemSearchRequest.Op.GTE, ItemSearchRequest.ValueType.NUMBER, 5),
-                        new ItemSearchRequest.FunctionalFilter("month", ItemSearchRequest.Op.EQ, ItemSearchRequest.ValueType.STRING, "december"),
-                        new ItemSearchRequest.FunctionalFilter("urgency", ItemSearchRequest.Op.EQ, ItemSearchRequest.ValueType.STRING, "casual")
+                        new ItemSearchRequest.FunctionalFilter("points_test", ItemSearchRequest.Op.GTE, ItemSearchRequest.ValueType.NUMBER, 5),
+                        new ItemSearchRequest.FunctionalFilter("month_test", ItemSearchRequest.Op.EQ, ItemSearchRequest.ValueType.STRING, "december"),
+                        new ItemSearchRequest.FunctionalFilter("urgency_test", ItemSearchRequest.Op.EQ, ItemSearchRequest.ValueType.STRING, "casual")
                 ),
                 null, null
         );
@@ -141,7 +146,7 @@ class ItemServiceTest {
 
         var req = new ItemSearchRequest(
                 List.of(),
-                List.of(new ItemSearchRequest.FunctionalFilter("month", ItemSearchRequest.Op.EQ, ItemSearchRequest.ValueType.STRING, "DECEMBER")),
+                List.of(new ItemSearchRequest.FunctionalFilter("month_test", ItemSearchRequest.Op.EQ, ItemSearchRequest.ValueType.STRING, "DECEMBER")),
                 null, null
         );
 
@@ -154,7 +159,7 @@ class ItemServiceTest {
 
         var req = new ItemSearchRequest(
                 List.of(),
-                List.of(new ItemSearchRequest.FunctionalFilter("points", ItemSearchRequest.Op.LTE, ItemSearchRequest.ValueType.NUMBER, 3)),
+                List.of(new ItemSearchRequest.FunctionalFilter("points_test", ItemSearchRequest.Op.LTE, ItemSearchRequest.ValueType.NUMBER, 3)),
                 null, null
         );
 
@@ -166,7 +171,7 @@ class ItemServiceTest {
     void functionalType_bool_eq() {
         var req = new ItemSearchRequest(
                 List.of(),
-                List.of(new ItemSearchRequest.FunctionalFilter("archived", ItemSearchRequest.Op.EQ, ItemSearchRequest.ValueType.BOOL, true)),
+                List.of(new ItemSearchRequest.FunctionalFilter("archived_test", ItemSearchRequest.Op.EQ, ItemSearchRequest.ValueType.BOOL, true)),
                 null, null
         );
 
@@ -178,7 +183,7 @@ class ItemServiceTest {
     void functionalType_date_gte() {
         var req = new ItemSearchRequest(
                 List.of(),
-                List.of(new ItemSearchRequest.FunctionalFilter("created_day", ItemSearchRequest.Op.GTE, ItemSearchRequest.ValueType.DATE, "2025-12-01")),
+                List.of(new ItemSearchRequest.FunctionalFilter("created_day_test", ItemSearchRequest.Op.GTE, ItemSearchRequest.ValueType.DATE, "2025-12-01")),
                 null, null
         );
 
@@ -189,7 +194,7 @@ class ItemServiceTest {
     @Test
     void appliesLimitAndOffset() {
         var req = new ItemSearchRequest(
-                List.of("finished"),
+                List.of("finished_test"),
                 List.of(),
                 1,
                 1
@@ -198,5 +203,18 @@ class ItemServiceTest {
         List<UUID> result = searchRepo.searchItemsIds(searchTestData.owner(), req);
 
         assertThat(result).containsExactly(searchTestData.getItems().getFirst());
+    }
+    @Test
+    void unassociateItemTag() {
+        List<UUID> tagsToUnassociate = searchTestData.getTagsToUnassociate();
+        ItemResponse res = itemService.unassociateTag(searchTestData.owner(),
+                searchTestData.getItems().get(3),
+                tagsToUnassociate.getFirst());
+        assertEquals(1, res.tags().size());
+        res = itemService.unassociateTag(searchTestData.owner(),
+                searchTestData.getItems().get(3),
+                tagsToUnassociate.get(1));
+        assertEquals(0,res.tags().size());
+
     }
 }
