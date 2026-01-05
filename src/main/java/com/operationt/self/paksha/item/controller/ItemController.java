@@ -42,6 +42,11 @@ public class ItemController {
         return itemService.search(req, owner());
     }
 
+    @PutMapping("/{itemId}/tag/{tagId}")
+    public ItemResponse associateTag(@PathVariable UUID itemId, @PathVariable UUID tagId) {
+        return itemService.associateTag(owner(), itemId, tagId);
+    }
+
     @DeleteMapping("/{itemId}/tag/{tagId}")
     public ItemResponse unassociateTag(@PathVariable UUID itemId, @PathVariable UUID tagId) {
         return itemService.unassociateTag(owner(), itemId, tagId);

@@ -170,6 +170,10 @@ public class TagService {
         throw new IllegalArgumentException("DATE must be ISO yyyy-MM-dd string");
     }
 
+    public boolean doesTagExist(UUID tagId) {
+        return tagRepo.existsById(tagId);
+    }
+
     private TagResponse toResponse(TagEntity t) {
         Object value = switch (t.getKind()) {
             case SINGLE -> null;

@@ -106,7 +106,22 @@ public class ItemService {
     }
 
     @Transactional
+    public ItemResponse associateTag(UUID ownerId, UUID itemId, UUID tagId) {
+        if(!itemRepo.existsById(itemId) || !tagService.doesTagExist(tagId)) {
+            throw new NoSuchElementException("Invalid item ID or tag ID");
+        }
+        ItemTagEntity linkItem = new ItemTagEntity();
+        linkItem.setItemId(itemId);
+        linkItem.setTagId(tagId);
+        linkRepo.save(linkItem);
+        return getByItemIds(List.of(itemId), ownerId).getFirst();
+    }
+
+    @Transactional
     public ItemResponse unassociateTag(UUID ownerId, UUID itemId, UUID tagId) {
+        if(!itemRepo.existsById(itemId) || !tagService.doesTagExist(tagId)) {
+            throw new NoSuchElementException("Invalid item ID or tag ID");
+        }
         ItemTagEntity linkItem = new ItemTagEntity();
         linkItem.setItemId(itemId);
         linkItem.setTagId(tagId);

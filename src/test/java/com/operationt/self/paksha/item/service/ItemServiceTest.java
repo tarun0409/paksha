@@ -204,6 +204,17 @@ class ItemServiceTest {
 
         assertThat(result).containsExactly(searchTestData.getItems().getFirst());
     }
+
+    @Test
+    void associateItemTag() {
+        List<UUID> tagsToAssociate = searchTestData.getTagsToAssociate();
+        ItemResponse res = itemService.associateTag(searchTestData.owner(), searchTestData.getItems().get(4), tagsToAssociate.getFirst());
+        assertEquals(1, res.tags().size());
+        res = itemService.associateTag(searchTestData.owner(),
+                searchTestData.getItems().get(4),
+                tagsToAssociate.get(1));
+        assertEquals(2,res.tags().size());
+    }
     @Test
     void unassociateItemTag() {
         List<UUID> tagsToUnassociate = searchTestData.getTagsToUnassociate();

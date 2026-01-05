@@ -41,9 +41,13 @@ public final class SearchTestData {
         return owner;
     }
     private final List<UUID> tagsToUnassociate = new ArrayList<>();
-
+    private final List<UUID> tagsToAssociate = new ArrayList<>();
     public List<UUID> getTagsToUnassociate() {
         return tagsToUnassociate;
+    }
+
+    public List<UUID> getTagsToAssociate() {
+        return tagsToAssociate;
     }
 
     public List<UUID> getItems() {
@@ -56,6 +60,7 @@ public final class SearchTestData {
         created.itemIds().forEach(itemRepo::deleteById);
         created.tagIds().forEach(tagRepo::deleteById);
         tagsToUnassociate.clear();
+        tagsToAssociate.clear();
     }
 
     public void seedBasicScenario() {
@@ -66,6 +71,8 @@ public final class SearchTestData {
 
         TagEntity unassociateOne = singleTag(owner, tagRepo, "tagToUnassociate_1");
         TagEntity unassociateTwo = singleTag(owner, tagRepo, "tagToUnassociate_2");
+        TagEntity associateSingleTag = singleTag(owner, tagRepo, "tagToAssociate_1");
+
 
         TagEntity points5 = functionalNumber(owner, tagRepo, "points_test", new BigDecimal("5"));
         TagEntity points3 = functionalNumber(owner, tagRepo, "points_test", new BigDecimal("3"));
@@ -75,12 +82,13 @@ public final class SearchTestData {
         TagEntity urgency = functionalString(owner, tagRepo, "urgency_test", "casual");
         TagEntity day2025_12_01 = functionalDate(owner, tagRepo, "created_day_test", LocalDate.parse("2025-12-01"));
         TagEntity day2025_11_01 = functionalDate(owner, tagRepo, "created_day_test", LocalDate.parse("2025-11-01"));
-
-        // Items
+        TagEntity associateFunctionalTag = functionalNumber(owner, tagRepo, "tagToAssociate_2", new BigDecimal("10"));
+                // Items
         ItemEntity a = item(owner, itemRepo, "testA", 10);
         ItemEntity b = item(owner, itemRepo, "testB", 20);
         ItemEntity c = item(owner, itemRepo, "testC", 30);
         ItemEntity thelPathriSingh = item(owner, itemRepo, "thelPathriSingh", 40);
+        ItemEntity associateItem = item(owner, itemRepo, "testD",  50);
 
         // Links
         link(linkRepo, a, personal);
@@ -108,7 +116,7 @@ public final class SearchTestData {
 
         this.created = new Created(
                 owner,
-                List.of(a.getId(), b.getId(), c.getId(), thelPathriSingh.getId()),
+                List.of(a.getId(), b.getId(), c.getId(), thelPathriSingh.getId(), associateItem.getId()),
                 List.of(personal.getId(),
                         finished.getId(),
                         learning.getId(),
@@ -121,10 +129,14 @@ public final class SearchTestData {
                         day2025_11_01.getId(),
                         urgency.getId(),
                         unassociateOne.getId(),
-                        unassociateTwo.getId())
+                        unassociateTwo.getId(),
+                        associateSingleTag.getId(),
+                        associateFunctionalTag.getId())
         );
         tagsToUnassociate.add(unassociateOne.getId());
         tagsToUnassociate.add(unassociateTwo.getId());
+        tagsToAssociate.add(associateSingleTag.getId());
+        tagsToAssociate.add(associateFunctionalTag.getId());
     }
 
     // ---------- creators ----------
