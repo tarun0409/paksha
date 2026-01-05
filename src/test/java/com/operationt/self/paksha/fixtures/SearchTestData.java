@@ -1,5 +1,6 @@
 package com.operationt.self.paksha.fixtures;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.operationt.self.paksha.item.entity.ItemEntity;
 import com.operationt.self.paksha.item.entity.ItemTagEntity;
 import com.operationt.self.paksha.item.repo.ItemRepository;
@@ -9,12 +10,14 @@ import com.operationt.self.paksha.tag.entity.TagKind;
 import com.operationt.self.paksha.tag.entity.TagValueType;
 import com.operationt.self.paksha.tag.repo.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Component
 public final class SearchTestData {
@@ -29,10 +32,20 @@ public final class SearchTestData {
 
     private SearchTestData() {}
 
-    public record Created(
-            UUID owner,
-            List<UUID> itemIds,
-            List<UUID> tagIds
+    class Created {
+        UUID owner;
+        Set<UUID> itemIds;
+        Set<UUID> tagIds;
+        public Created() {
+            this.owner = owner();
+            this.itemIds = new HashSet<>();
+            this.tagIds = new HashSet<>();
+        }
+    }
+    public record FunctionalTag(
+       TagValueType type,
+       String key,
+       Object object
     ) {}
 
     private Created created;
@@ -40,108 +53,79 @@ public final class SearchTestData {
     public UUID owner() {
         return owner;
     }
-    private final List<UUID> tagsToUnassociate = new ArrayList<>();
-    private final List<UUID> tagsToAssociate = new ArrayList<>();
-    public List<UUID> getTagsToUnassociate() {
-        return tagsToUnassociate;
-    }
-
-    public List<UUID> getTagsToAssociate() {
-        return tagsToAssociate;
-    }
-
-    public List<UUID> getItems() {
-        return created.itemIds();
-    }
-
     public void cleanup() {
-        created.itemIds().forEach(id -> linkRepo.findByItemId(id).forEach(linkRepo::delete));
+        if(created == null) {
+            return;
+        }
+        created.itemIds.forEach(id -> linkRepo.deleteAll(linkRepo.findByItemId(id)));
 
-        created.itemIds().forEach(itemRepo::deleteById);
-        created.tagIds().forEach(tagRepo::deleteById);
-        tagsToUnassociate.clear();
-        tagsToAssociate.clear();
+        created.itemIds.forEach(itemRepo::deleteById);
+        created.tagIds.forEach(tagRepo::deleteById);
+        created = null;
+    }
+    public List<UUID> createItems(List<String> itemKeys) {
+        if(created == null) {
+            created = new Created();
+        }
+        List<UUID> itemIds = itemKeys.stream().map(this::item).map(ItemEntity::getId).toList();
+        created.itemIds.addAll(itemIds);
+        return itemIds;
+    }
+    public Map<UUID, List<UUID>> associateFunctionalTags(Map<UUID, List<FunctionalTag>> keyMap) {
+        if(created == null) {
+            throw new IllegalArgumentException("Items are not created");
+        }
+        Map<UUID, List<UUID>> itemToTagMap = new HashMap<>();
+        for (Map.Entry<UUID, List<FunctionalTag>> itemToTags : keyMap.entrySet()) {
+
+            List<UUID> tags = itemToTags.getValue().stream()
+                    .map(this::functionalTag)
+                    .map(TagEntity::getId)
+                    .toList();
+            tags.forEach(t -> link(itemToTags.getKey(), t));
+            itemToTagMap.put(itemToTags.getKey(), tags);
+            created.tagIds.addAll(tags);
+        }
+        return itemToTagMap;
     }
 
-    public void seedBasicScenario() {
-        // Tags
-        TagEntity personal = singleTag(owner, tagRepo, "personal_test");
-        TagEntity finished = singleTag(owner, tagRepo, "finished_test");
-        TagEntity learning = singleTag(owner, tagRepo, "learning_test");
-
-        TagEntity unassociateOne = singleTag(owner, tagRepo, "tagToUnassociate_1");
-        TagEntity unassociateTwo = singleTag(owner, tagRepo, "tagToUnassociate_2");
-        TagEntity associateSingleTag = singleTag(owner, tagRepo, "tagToAssociate_1");
 
 
-        TagEntity points5 = functionalNumber(owner, tagRepo, "points_test", new BigDecimal("5"));
-        TagEntity points3 = functionalNumber(owner, tagRepo, "points_test", new BigDecimal("3"));
-        TagEntity monthDec = functionalString(owner, tagRepo, "month_test", "december");
-        TagEntity archivedTrue = functionalBool(owner, tagRepo, "archived_test", true);
-        TagEntity archivedFalse = functionalBool(owner, tagRepo, "archived_test", false);
-        TagEntity urgency = functionalString(owner, tagRepo, "urgency_test", "casual");
-        TagEntity day2025_12_01 = functionalDate(owner, tagRepo, "created_day_test", LocalDate.parse("2025-12-01"));
-        TagEntity day2025_11_01 = functionalDate(owner, tagRepo, "created_day_test", LocalDate.parse("2025-11-01"));
-        TagEntity associateFunctionalTag = functionalNumber(owner, tagRepo, "tagToAssociate_2", new BigDecimal("10"));
-                // Items
-        ItemEntity a = item(owner, itemRepo, "testA", 10);
-        ItemEntity b = item(owner, itemRepo, "testB", 20);
-        ItemEntity c = item(owner, itemRepo, "testC", 30);
-        ItemEntity thelPathriSingh = item(owner, itemRepo, "thelPathriSingh", 40);
-        ItemEntity associateItem = item(owner, itemRepo, "testD",  50);
-
-        // Links
-        link(linkRepo, a, personal);
-        link(linkRepo, a, finished);
-        link(linkRepo, a, points5);
-        link(linkRepo, a, monthDec);
-        link(linkRepo, a, archivedTrue);
-        link(linkRepo, a, day2025_12_01);
-        link(linkRepo, a, urgency);
-        link(linkRepo, a, points3);
-
-        link(linkRepo, b, personal);
-        // b missing finished
-        link(linkRepo, b, points5);
-        link(linkRepo, b, archivedFalse);
-        link(linkRepo, b, day2025_11_01);
-
-        link(linkRepo, c, personal);
-        link(linkRepo, c, finished);
-        link(linkRepo, c, learning);
-
-        link(linkRepo, thelPathriSingh, unassociateOne);
-        link(linkRepo, thelPathriSingh, unassociateTwo);
-        // c missing monthDec
-
-        this.created = new Created(
-                owner,
-                List.of(a.getId(), b.getId(), c.getId(), thelPathriSingh.getId(), associateItem.getId()),
-                List.of(personal.getId(),
-                        finished.getId(),
-                        learning.getId(),
-                        points5.getId(),
-                        points3.getId(),
-                        monthDec.getId(),
-                        archivedTrue.getId(),
-                        archivedFalse.getId(),
-                        day2025_12_01.getId(),
-                        day2025_11_01.getId(),
-                        urgency.getId(),
-                        unassociateOne.getId(),
-                        unassociateTwo.getId(),
-                        associateSingleTag.getId(),
-                        associateFunctionalTag.getId())
-        );
-        tagsToUnassociate.add(unassociateOne.getId());
-        tagsToUnassociate.add(unassociateTwo.getId());
-        tagsToAssociate.add(associateSingleTag.getId());
-        tagsToAssociate.add(associateFunctionalTag.getId());
+    public Map<UUID, List<UUID>> associateSingleTags(Map<UUID, List<String>> keyMap) {
+        if(created == null) {
+            throw new IllegalArgumentException("Items are not created");
+        }
+        Map<UUID, List<UUID>> itemToTagMap = new HashMap<>();
+        for (Map.Entry<UUID, List<String>> itemToTags : keyMap.entrySet()) {
+            List<UUID> tags = itemToTags.getValue().stream()
+                    .map(this::singleTag)
+                    .map(TagEntity::getId)
+                    .toList();
+            tags.forEach(t -> link(itemToTags.getKey(), t));
+            itemToTagMap.put(itemToTags.getKey(), tags);
+            created.tagIds.addAll(tags);
+        }
+        return itemToTagMap;
     }
 
-    // ---------- creators ----------
+    public List<UUID> createSingleTags(List<String> keys) {
+        if(created == null) {
+            created = new Created();
+        }
+        List<UUID> tagIds = keys.stream().map(this::singleTag).map(TagEntity::getId).toList();
+        created.tagIds.addAll(tagIds);
+        return tagIds;
+    }
+    public List<UUID> createFunctionalTags(List<FunctionalTag> tagInfos) {
+        if(created == null) {
+            created = new Created();
+        }
+        List<UUID> tagIds = tagInfos.stream().map(this::functionalTag).map(TagEntity::getId).toList();
+        created.tagIds.addAll(tagIds);
+        return tagIds;
+    }
 
-    private static ItemEntity item(UUID owner, ItemRepository repo, String title, int updatedAtSeconds) {
+    public ItemEntity item(String title) {
         ItemEntity it = new ItemEntity();
         it.setId(UUID.randomUUID());
         it.setOwnerUserId(owner);
@@ -149,115 +133,73 @@ public final class SearchTestData {
         it.setBody(null);
         Instant base = Instant.parse("2025-12-01T00:00:00Z");
         it.setCreatedAt(base);
-        it.setUpdatedAt(base.plusSeconds(updatedAtSeconds));
-        return repo.save(it);
+        int secs = ThreadLocalRandom.current().nextInt(10, 100);
+        it.setUpdatedAt(base.plusSeconds(secs));
+        return itemRepo.save(it);
     }
 
-    private static TagEntity singleTag(UUID owner, TagRepository repo, String key) {
+    public TagEntity singleTag(String key) {
         TagEntity t = new TagEntity();
         t.setId(UUID.randomUUID());
         t.setOwnerUserId(owner);
         t.setKind(TagKind.SINGLE);
         t.setKey(key.toLowerCase(Locale.ROOT));
-        t.setValueType(null);
-        t.setValueCanonical(null);
         t.setCreatedAt(Instant.now());
 
-        t.setValueString(null);
-        t.setValueNumber(null);
-        t.setValueBool(null);
-        t.setValueDate(null);
-        t.setValueJson(null);
-
-        return repo.save(t);
+        try {
+            return tagRepo.save(t);
+        } catch (DataIntegrityViolationException e) {
+            return tagRepo.findByOwnerUserIdAndKindAndKey(owner, TagKind.SINGLE, key).orElseThrow();
+        }
     }
 
-    private static TagEntity functionalString(UUID owner, TagRepository repo, String key, String value) {
+    private TagEntity functionalTag(FunctionalTag tagInfo) {
         TagEntity t = new TagEntity();
         t.setId(UUID.randomUUID());
         t.setOwnerUserId(owner);
         t.setKind(TagKind.FUNCTIONAL);
-        t.setKey(key.toLowerCase(Locale.ROOT));
-        t.setValueType(TagValueType.STRING);
-
-        String canonical = value.trim().toLowerCase(Locale.ROOT);
+        t.setKey(tagInfo.key().toLowerCase(Locale.ROOT));
+        t.setCreatedAt(Instant.now());
+        t.setValueType(tagInfo.type());
+        String canonical = null;
+        switch (tagInfo.type()) {
+            case STRING -> {
+                canonical = ((String) tagInfo.object()).trim().toLowerCase(Locale.ROOT);
+                t.setValueString(canonical);
+            }
+            case NUMBER -> {
+                BigDecimal num = BigDecimal.valueOf((Integer)tagInfo.object()) ;
+                canonical = num.stripTrailingZeros().toPlainString();
+                t.setValueNumber(num);
+            }
+            case BOOL   -> {
+                boolean value = (boolean) tagInfo.object();
+                canonical = Boolean.toString(value);
+                t.setValueBool(value);
+            }
+            case DATE   -> {
+                LocalDate value = (java.time.LocalDate)tagInfo.object();
+                t.setValueDate(value);
+                canonical = value.toString();
+            }
+            case JSON   -> t.setValueJson((JsonNode) tagInfo.object()); // often String/JsonNode/Map
+        }
         t.setValueCanonical(canonical);
-        t.setValueString(value.trim());
-
-        t.setValueNumber(null);
-        t.setValueBool(null);
-        t.setValueDate(null);
-        t.setValueJson(null);
-
-        t.setCreatedAt(Instant.now());
-        return repo.save(t);
+        try {
+//            System.out.println(t.getKey() + " " + t.getValueCanonical());
+            return tagRepo.save(t);
+        } catch (DataIntegrityViolationException e) {
+            return tagRepo.findByOwnerUserIdAndKindAndKeyAndValueTypeAndValueCanonical(
+                    owner, TagKind.FUNCTIONAL, t.getKey(), t.getValueType(), canonical
+            ).orElseThrow();
+        }
     }
 
-    private static TagEntity functionalNumber(UUID owner, TagRepository repo, String key, BigDecimal value) {
-        TagEntity t = new TagEntity();
-        t.setId(UUID.randomUUID());
-        t.setOwnerUserId(owner);
-        t.setKind(TagKind.FUNCTIONAL);
-        t.setKey(key.toLowerCase(Locale.ROOT));
-        t.setValueType(TagValueType.NUMBER);
-
-        t.setValueNumber(value);
-        t.setValueCanonical(value.stripTrailingZeros().toPlainString());
-
-        t.setValueString(null);
-        t.setValueBool(null);
-        t.setValueDate(null);
-        t.setValueJson(null);
-
-        t.setCreatedAt(Instant.now());
-        return repo.save(t);
-    }
-
-    private static TagEntity functionalBool(UUID owner, TagRepository repo, String key, boolean value) {
-        TagEntity t = new TagEntity();
-        t.setId(UUID.randomUUID());
-        t.setOwnerUserId(owner);
-        t.setKind(TagKind.FUNCTIONAL);
-        t.setKey(key.toLowerCase(Locale.ROOT));
-        t.setValueType(TagValueType.BOOL);
-
-        t.setValueBool(value);
-        t.setValueCanonical(Boolean.toString(value));
-
-        t.setValueString(null);
-        t.setValueNumber(null);
-        t.setValueDate(null);
-        t.setValueJson(null);
-
-        t.setCreatedAt(Instant.now());
-        return repo.save(t);
-    }
-
-    private static TagEntity functionalDate(UUID owner, TagRepository repo, String key, LocalDate value) {
-        TagEntity t = new TagEntity();
-        t.setId(UUID.randomUUID());
-        t.setOwnerUserId(owner);
-        t.setKind(TagKind.FUNCTIONAL);
-        t.setKey(key.toLowerCase(Locale.ROOT));
-        t.setValueType(TagValueType.DATE);
-
-        t.setValueDate(value);
-        t.setValueCanonical(value.toString());
-
-        t.setValueString(null);
-        t.setValueNumber(null);
-        t.setValueBool(null);
-        t.setValueJson(null);
-
-        t.setCreatedAt(Instant.now());
-        return repo.save(t);
-    }
-
-    private static void link(ItemTagRepository repo, ItemEntity item, TagEntity tag) {
+    private void link(UUID itemId, UUID tagId) {
         ItemTagEntity l = new ItemTagEntity();
-        l.setItemId(item.getId());
-        l.setTagId(tag.getId());
-        repo.save(l);
+        l.setItemId(itemId);
+        l.setTagId(tagId);
+        linkRepo.save(l);
     }
 }
 
